@@ -60,3 +60,8 @@ testpaths = ["tests"]
 
 [tool.flet.flutter.pubspec.dependency_overrides]
 connectivity_plus="6.0.5"
+# Pin jni / jni_flutter to the versions flet 0.86.5 was built against.
+# A newer jni_flutter patch (1.0.4+1) generates Dart const code that fails
+# constant evaluation under Flutter 3.44's Dart SDK -> build error G8388A750.
+jni="1.0.0"
+jni_flutter="1.0.0"

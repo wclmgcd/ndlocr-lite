@@ -27,12 +27,13 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          # flet 0.86.5 is built against Flutter 3.38.0. Using a newer Flutter
-          # (e.g. 3.44.x) ships a Dart SDK that breaks jni 1.0.0's constant
-          # evaluation during the Windows native compile ("Constant evaluation
-          # error" in jni_flutter / shared_preferences_android). Pin the matched
-          # version so the build succeeds.
-          flutter-version: '3.38.0'
+          # flet 0.86.5 hard-requires Flutter 3.44.8 (downgrading to 3.38.0 makes
+          # `flet build` abort with "Flutter SDK 3.44.8 is required"). The
+          # transient jni_flutter 1.0.4+1 patch breaks Dart constant evaluation
+          # under Flutter 3.44's Dart SDK (build error G8388A750); the jni /
+          # jni_flutter pins in ndlocr-lite-gui/pyproject.toml pull back the
+          # 1.0.0 versions flet was built against and fix that error.
+          flutter-version: '3.44.8'
           channel: 'stable'
 
       - name: Install Python dependencies
