@@ -27,7 +27,12 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.8'
+          # flet 0.86.5 is built against Flutter 3.38.0. Using a newer Flutter
+          # (e.g. 3.44.x) ships a Dart SDK that breaks jni 1.0.0's constant
+          # evaluation during the Windows native compile ("Constant evaluation
+          # error" in jni_flutter / shared_preferences_android). Pin the matched
+          # version so the build succeeds.
+          flutter-version: '3.38.0'
           channel: 'stable'
 
       - name: Install Python dependencies
