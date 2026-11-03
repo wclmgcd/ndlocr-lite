@@ -1,5 +1,5 @@
 GUI_DEFAULT_CONFIG = {
-    'langcode': 'ja',
+    'langcode': 'zh',
     'json': True,
     'xml': True,
     'tei': True,

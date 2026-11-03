@@ -930,8 +930,13 @@ def main(page: ft.Page):
         supported_locales=[
             ft.Locale('ja', 'JP'),
             ft.Locale('en', 'US'),
+            ft.Locale('zh', 'CN'),
         ],
-        current_locale=ft.Locale('ja', 'JP') if config_obj['langcode'] == 'ja' else ft.Locale('en', 'US'),
+        current_locale=(
+            ft.Locale('ja', 'JP') if config_obj['langcode'] == 'ja'
+            else ft.Locale('zh', 'CN') if config_obj['langcode'] == 'zh'
+            else ft.Locale('en', 'US')
+        ),
     )
 
     def save_config():
@@ -945,6 +950,8 @@ def main(page: ft.Page):
             page.locale_configuration.current_locale = ft.Locale('ja', 'JP')
         elif index == 1:
             page.locale_configuration.current_locale = ft.Locale('en', 'US')
+        elif index == 2:
+            page.locale_configuration.current_locale = ft.Locale('zh', 'CN')
         config_obj['langcode'] = page.locale_configuration.current_locale.language_code
         save_config()
         page.update()
@@ -1457,10 +1464,10 @@ def main(page: ft.Page):
                     progressmessage.value=TRANSLATIONS["main_ocr_cancelled"][config_obj["langcode"]].format(
                         completed=completed_count,total=allsum,elapsed=time.time()-allstart
                     )
-                elif config_obj['langcode'] == 'ja':
-                    progressmessage.value = '{} 件OCR完了 / 所要時間 {:.2f} 秒'.format(allsum, time.time() - allstart)
                 else:
-                    progressmessage.value = '{} items completed / Total time {:.2f} sec'.format(allsum, time.time() - allstart)
+                    progressmessage.value = TRANSLATIONS["main_ocr_completed"][config_obj["langcode"]].format(
+                        completed=allsum, elapsed=time.time() - allstart
+                    )
                 progressmessage.update()
 
                 if chkbx_tei.value and len(tei_jsonobjlist)>0:
@@ -1543,10 +1550,7 @@ def main(page: ft.Page):
                 if ext == 'pdf':
                     pdf_job_list.append(selected_file_path)
                     filestem = os.path.basename(selected_file_path)[:-4]
-                    if config_obj['langcode'] == 'ja':
-                        progressmessage.value = 'pdfファイルの前処理中…… {} '.format(selected_file_path)
-                    else:
-                        progressmessage.value = 'preprocessing pdf…… {} '.format(selected_file_path)
+                    progressmessage.value = TRANSLATIONS['main_pdf_preprocessing'][config_obj['langcode']].format(path=selected_file_path)
                     parts_control(True)
                     page.update()
                     for p in glob.glob(os.path.join(PDFTMPPATH, '*.jpg')):
@@ -1554,10 +1558,7 @@ def main(page: ft.Page):
                             os.remove(p)
                     os.makedirs(PDFTMPPATH, exist_ok=True)
                     await asyncio.to_thread(render_pdf_preview, selected_file_path, filestem)
-                    if config_obj['langcode'] == 'ja':
-                        progressmessage.value = 'pdfファイルの前処理完了'
-                    else:
-                        progressmessage.value = 'Preprocessing of pdf complete'
+                    progressmessage.value = TRANSLATIONS['main_pdf_preprocessing_done'][config_obj['langcode']]
                     parts_control(False)
                     page.update()
                 else:
@@ -1621,10 +1622,7 @@ def main(page: ft.Page):
                         else:
                             filestem = os.path.splitext(filename)[0]
 
-                        if config_obj['langcode'] == 'ja':
-                            progressmessage.value = 'pdfファイルの前処理中…… {} '.format(inputpath)
-                        else:
-                            progressmessage.value = 'preprocessing pdf…… {} '.format(inputpath)
+                        progressmessage.value = TRANSLATIONS['main_pdf_preprocessing'][config_obj['langcode']].format(path=inputpath)
                         page.update()
 
                         try:
@@ -1632,10 +1630,7 @@ def main(page: ft.Page):
                         except Exception as err:
                             print(f'Error processing {inputpath}: {err}')
 
-                if config_obj['langcode'] == 'ja':
-                    progressmessage.value = '処理完了'
-                else:
-                    progressmessage.value = 'Processing complete'
+                progressmessage.value = TRANSLATIONS['main_processing_complete'][config_obj['langcode']]
 
                 selector.set_image(inputpathlist)
 
@@ -1950,10 +1945,10 @@ def main(page: ft.Page):
         )
         explain_label = ft.Text(TRANSLATIONS['main_explain'][config_obj['langcode']])
         localebutton = ft.CupertinoSlidingSegmentedButton(
-            selected_index=0 if config_obj['langcode'] == 'ja' else 1,
+            selected_index=0 if config_obj['langcode'] == 'ja' else 2 if config_obj['langcode'] == 'zh' else 1,
             thumb_color=ft.Colors.BLUE_400,
             on_change=handle_locale_change,
-            controls=[ft.Text('日本語'), ft.Text('English')],
+            controls=[ft.Text('日本語'), ft.Text('English'), ft.Text('中文')],
             key='locale',
         )
         page.add(
@@ -2032,24 +2027,16 @@ def main(page: ft.Page):
                     tool.table_recognizer = origin_table_recognizer
 
                 progressbar.value = 0
-                if config_obj['langcode'] == 'ja':
-                    if TABLE_STRUCTURE_FEATURE is None:
-                        progressmessage.value = f'OCRモデル準備完了 ({model_state["elapsed"]:.1f}秒)'
-                    elif model_state.get('table_error') is None:
-                        progressmessage.value = f'OCR / 表推定モデル準備完了 ({model_state["elapsed"]:.1f}秒)'
-                    else:
-                        progressmessage.value = f'OCRモデル準備完了 / 表推定初期化失敗 ({model_state["elapsed"]:.1f}秒)'
+                if TABLE_STRUCTURE_FEATURE is None:
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_only'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
+                elif model_state.get('table_error') is None:
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_table'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
                 else:
-                    if TABLE_STRUCTURE_FEATURE is None:
-                        progressmessage.value = f'OCR models ready ({model_state["elapsed"]:.1f} sec)'
-                    elif model_state.get('table_error') is None:
-                        progressmessage.value = f'OCR / TableInfer models ready ({model_state["elapsed"]:.1f} sec)'
-                    else:
-                        progressmessage.value = f'OCR models ready / TableInfer models unavailable ({model_state["elapsed"]:.1f} sec)'
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_table_fail'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
             except Exception as ex:
                 model_state['error'] = ex
                 progressbar.value = 0
-                progressmessage.value = f'OCR model initialization failed: {ex}'
+                progressmessage.value = TRANSLATIONS['main_model_init_failed'][config_obj['langcode']].format(error=ex)
             finally:
                 model_state['loading'] = False
                 parts_control(False)
@@ -2058,28 +2045,17 @@ def main(page: ft.Page):
         if models_are_ready():
             parts_control(False)
             if model_state['elapsed'] is not None:
-                if config_obj['langcode'] == 'ja':
-                    if TABLE_STRUCTURE_FEATURE is None:
-                        progressmessage.value = f'OCRモデル準備完了 ({model_state["elapsed"]:.1f}秒)'
-                    elif model_state.get('table_error') is None:
-                        progressmessage.value = f'OCR / 表推定モデル準備完了 ({model_state["elapsed"]:.1f}秒)'
-                    else:
-                        progressmessage.value = f'OCRモデル準備完了 / 表推定初期化失敗 ({model_state["elapsed"]:.1f}秒)'
+                if TABLE_STRUCTURE_FEATURE is None:
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_only'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
+                elif model_state.get('table_error') is None:
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_table'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
                 else:
-                    if TABLE_STRUCTURE_FEATURE is None:
-                        progressmessage.value = f'OCR models ready ({model_state["elapsed"]:.1f} sec)'
-                    elif model_state.get('table_error') is None:
-                        progressmessage.value = f'OCR / TableInfer models ready ({model_state["elapsed"]:.1f} sec)'
-                    else:
-                        progressmessage.value = f'OCR models ready / TableInfer models unavailable ({model_state["elapsed"]:.1f} sec)'
+                    progressmessage.value = TRANSLATIONS['main_model_ready_ocr_table_fail'][config_obj['langcode']].format(elapsed=model_state["elapsed"])
             page.update()
         elif not model_state['loading']:
             model_state['loading'] = True
             progressbar.value = None
-            if config_obj['langcode'] == 'ja':
-                progressmessage.value = 'OCRモデルを読み込み中…'
-            else:
-                progressmessage.value = 'Loading OCR models…'
+            progressmessage.value = TRANSLATIONS['main_loading_models'][config_obj['langcode']]
             localebutton.disabled = True
             page.update()
             page.run_task(initialize_models)
